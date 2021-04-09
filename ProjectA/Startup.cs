@@ -7,9 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace ProjectA
@@ -33,10 +35,30 @@ namespace ProjectA
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ProjectA", Version = "v1" });
             });
             services.AddHttpClient("MyNamedClient", client =>
-           {
-               client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
-               client.DefaultRequestHeaders.Add("Accept", "application/json");
-           });
+            {
+                client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+        }
+
+        static Policy GetRetryPolicy()
+        {
+            var policy = Policy
+                            .Handle<SocketException>()
+                            .WaitAndRetry(new[]
+                            {
+                                TimeSpan.FromSeconds(1),
+                                TimeSpan.FromSeconds(2),
+                                TimeSpan.FromSeconds(3),
+                            }, (exception, timeSpan, retryCount, context) =>
+                            {
+                                Console.WriteLine($"exception.message: {exception.Message}");
+                                Console.WriteLine($"timeSpan: {timeSpan}");
+                                Console.WriteLine($"retryCount: {retryCount}");
+                                Console.WriteLine($"context: {context}");
+                            });
+
+            return policy;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

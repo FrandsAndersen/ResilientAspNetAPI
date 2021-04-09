@@ -28,14 +28,14 @@ namespace ProjectB.Controllers
                 .InjectionRate(0.5)
                 .Enabled(isEnabled));
 
-            chaosPolicy.Execute(() => someMethod());
+            var result = chaosPolicy.Execute(() => GetSomeString());
 
-            return new string[] { "value1", "value2" };
+            return result;
         }
 
-        private void someMethod()
+        private string[] GetSomeString()
         {
-            
+            return new string[] { "value1", "value2" };
         }
 
         // GET api/<ProjectBController>/5

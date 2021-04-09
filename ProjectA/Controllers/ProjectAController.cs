@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -13,8 +15,8 @@ namespace ProjectA.Controllers
     [ApiController]
     public class ProjectAController : ControllerBase
     {
-
         private readonly IHttpClientFactory _httpClientFactory;
+
         public ProjectAController(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
@@ -25,9 +27,8 @@ namespace ProjectA.Controllers
         public async Task<IActionResult> GetAsync()
         {
             var client = _httpClientFactory.CreateClient("MyNamedClient");
-            var msg = await client.GetStringAsync("");
-
-            return Ok(msg);
+            var response = await client.GetStringAsync("");
+            return Ok(response);
         }
 
         // GET api/<ProjectAController>/5
