@@ -8,9 +8,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Polly;
+using Polly.Extensions.Http;
+using ProjectA.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -43,26 +46,34 @@ namespace ProjectA
                 TimeSpan.FromSeconds(2),
                 TimeSpan.FromSeconds(3),
             }));
+
+            services.AddHttpClient<IRequestStringService, RequestStringService>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+                .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes
+                .AddPolicyHandler(GetRetryPolicy());
         }
 
-        static Policy GetRetryPolicy()
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         {
-            var policy = Policy
-                            .Handle<SocketException>()
-                            .WaitAndRetry(new[]
-                            {
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromSeconds(2),
-                                TimeSpan.FromSeconds(3),
-                            }, (exception, timeSpan, retryCount, context) =>
-                            {
-                                Console.WriteLine($"exception.message: {exception.Message}");
-                                Console.WriteLine($"timeSpan: {timeSpan}");
-                                Console.WriteLine($"retryCount: {retryCount}");
-                                Console.WriteLine($"context: {context}");
-                            });
+            Random jitterer = new Random();
+            return HttpPolicyExtensions
+                 .HandleTransientHttpError()
+                 .OrResult(res => !res.IsSuccessStatusCode)
+                 .WaitAndRetryAsync(
+                      4,
+                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
+                                                           + TimeSpan.FromMilliseconds(jitterer.Next(0, 1000)),
+                     onRetry: (response, span, retryCount, context) =>
+                     {
+                         Console.WriteLine($"Retry count: {retryCount}");
+                         Console.WriteLine($"Response: {response}");
+                         Console.WriteLine($"Span: {span}", span);
+                         Console.WriteLine($"Context: {context}");
+                     });
 
-            return policy;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

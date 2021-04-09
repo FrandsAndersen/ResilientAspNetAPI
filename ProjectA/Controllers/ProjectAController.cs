@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Polly;
+using ProjectA.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,18 +17,28 @@ namespace ProjectA.Controllers
     public class ProjectAController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IRequestStringService _requestStringService;
 
-        public ProjectAController(IHttpClientFactory httpClientFactory)
+        public ProjectAController(IHttpClientFactory httpClientFactory, IRequestStringService requestStringService)
         {
             _httpClientFactory = httpClientFactory;
+            _requestStringService = requestStringService;
         }
 
         // GET: api/<ProjectAController>
-        [HttpGet]
-        public async Task<IActionResult> GetAsync()
+        [HttpGet("NamedClient")]
+        public async Task<IActionResult> GetAsyncNamedClient()
         {
             var client = _httpClientFactory.CreateClient("MyNamedClient");
             var response = await client.GetStringAsync("");
+            return Ok(response);
+        }
+
+        // GET: api/<ProjectAController>
+        [HttpGet("TypedClient")]
+        public async Task<IActionResult> GetAsyncTypedClient()
+        {
+            var response = await _requestStringService.GetStringsFromProjectB();
             return Ok(response);
         }
 
