@@ -19,6 +19,11 @@ namespace ProjectB.Controllers
             return new string[] { "value1", "value2" };
         }
 
+        private void someMethod()
+        {
+
+        }
+
         // GET api/<ProjectBController>/5
         [HttpGet("{id}")]
         public string Get(int id)
