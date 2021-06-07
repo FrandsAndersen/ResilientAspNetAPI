@@ -26,7 +26,7 @@ namespace ProjectB.Controllers
             var chaosPolicy = MonkeyPolicy.InjectException(with =>
                 with.Fault(fault)
                                     .InjectionRate(0.5) // Fail 50% of requests
-                                                        //.InjectionRate(1) // Used to simulate circuit breaker
+                                                        .InjectionRate(1) // Used to simulate circuit breaker
                 .Enabled(isEnabled));
 
             var result = chaosPolicy.Execute(() => GetSomeString());

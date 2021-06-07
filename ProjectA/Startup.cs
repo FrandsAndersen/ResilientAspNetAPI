@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ProjectA
@@ -56,9 +57,10 @@ namespace ProjectA
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
-                .AddPolicyHandler(GetRetryPolicy());
+            //.AddPolicyHandler(GetRetryPolicy())
             //.AddPolicyHandler(GetCircuitBreakerPolicy());
             //.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
+            .AddPolicyHandler(GetFallbackPolicy());
 
         }
 
@@ -91,16 +93,15 @@ namespace ProjectA
 
         }
 
-        //private static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy()
-        //{
-        //    AsyncPolicy timeoutPolicy = Policy.TimeoutAsync(30);
-        //    HttpResponseMessage httpResponse = timeoutPolicy
-        //        .ExecuteAsync(
-        //          async ct => await httpClient.GetAsync(endpoint, ct), // Execute a delegate which responds to a CancellationToken input parameter.
-        //          CancellationToken.None // In this case, CancellationToken.None is passed into the execution, indicating you have no independent cancellation control you wish to add to the cancellation provided by TimeoutPolicy.  Your own indepdent CancellationToken can also be passed - see wiki for examples.
-        //          );
-
-        //}
+        private static IAsyncPolicy<HttpResponseMessage> GetFallbackPolicy()
+        {
+            return Policy
+                .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                .FallbackAsync(new HttpResponseMessage()
+                {
+                    Content = new StringContent("some value, some other value")
+                });
+        }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
