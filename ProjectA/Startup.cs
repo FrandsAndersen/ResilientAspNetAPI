@@ -57,10 +57,10 @@ namespace ProjectA
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
-            //.AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetRetryPolicy())
             //.AddPolicyHandler(GetCircuitBreakerPolicy());
-            //.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
-            .AddPolicyHandler(GetFallbackPolicy());
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
+            //.AddPolicyHandler(GetFallbackPolicy());
 
         }
 
@@ -70,7 +70,7 @@ namespace ProjectA
             return HttpPolicyExtensions
                  .HandleTransientHttpError() // TODO: Find out what this does...
                  .OrResult(res => !res.IsSuccessStatusCode) // Retry if status code != 200
-                                                            //.Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
+                 .Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
                  .WaitAndRetryAsync(
                       4,
                      retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
