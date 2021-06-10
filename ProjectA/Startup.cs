@@ -59,8 +59,8 @@ namespace ProjectA
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
             .AddPolicyHandler(GetRetryPolicy())
             //.AddPolicyHandler(GetCircuitBreakerPolicy());
-            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
-            //.AddPolicyHandler(GetFallbackPolicy());
+            //.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
+            .AddPolicyHandler(GetFallbackPolicy());
 
         }
 
@@ -96,7 +96,7 @@ namespace ProjectA
         private static IAsyncPolicy<HttpResponseMessage> GetFallbackPolicy()
         {
             return Policy
-                .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode).Or<HttpRequestException>()
                 .FallbackAsync(new HttpResponseMessage()
                 {
                     Content = new StringContent("some value, some other value")
