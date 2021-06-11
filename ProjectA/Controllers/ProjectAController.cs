@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Polly;
+using ProjectA.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -13,21 +16,31 @@ namespace ProjectA.Controllers
     [ApiController]
     public class ProjectAController : ControllerBase
     {
-
         private readonly IHttpClientFactory _httpClientFactory;
-        public ProjectAController(IHttpClientFactory httpClientFactory)
+        private readonly IRequestStringService _requestStringService;
+
+        public ProjectAController(IHttpClientFactory httpClientFactory, IRequestStringService requestStringService)
         {
             _httpClientFactory = httpClientFactory;
+            _requestStringService = requestStringService;
         }
 
         // GET: api/<ProjectAController>
-        [HttpGet]
-        public async Task<IActionResult> GetAsync()
+        [HttpGet("NamedClient")]
+        public async Task<IActionResult> GetAsyncNamedClient()
         {
             var client = _httpClientFactory.CreateClient("MyNamedClient");
-            var msg = await client.GetStringAsync("");
+            var response = await client.GetStringAsync("");
+            return Ok(response);
+        }
 
-            return Ok(msg);
+        // GET: api/<ProjectAController>
+        [HttpGet("TypedClient")]
+        public async Task<IActionResult> GetAsyncTypedClient()
+        {
+            //var response = await _requestStringService.GetStringsFromProjectB();
+            var response = await _requestStringService.GetStringsFromProjectB();
+            return Ok(response);
         }
 
         // GET api/<ProjectAController>/5

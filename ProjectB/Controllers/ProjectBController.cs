@@ -2,7 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
+using Polly;
 using System.Threading.Tasks;
+using Polly.Contrib.Simmy;
+using Polly.Contrib.Simmy.Outcomes;
+using System.Threading;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,13 +21,25 @@ namespace ProjectB.Controllers
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return new string[] { "value1", "value2" };
+            var isEnabled = true;
+
+            var fault = new SocketException(errorCode: 10013);
+            var chaosPolicy = MonkeyPolicy.InjectException(with =>
+                with.Fault(fault)
+                           .InjectionRate(0.5) // Fail 50% of requests
+                           //.InjectionRate(1) // Used to simulate circuit breaker
+                .Enabled(isEnabled));
+
+            var result = chaosPolicy.Execute(() => GetSomeString());
+
+            return result;
         }
 
-        private void someMethod()
+        private string[] GetSomeString()
         {
-
+            return new string[] { "Hej", "Poul" };
         }
+
 
         // GET api/<ProjectBController>/5
         [HttpGet("{id}")]
