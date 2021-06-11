@@ -57,20 +57,20 @@ namespace ProjectA
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
-            .AddPolicyHandler(GetRetryPolicy())
-            //.AddPolicyHandler(GetCircuitBreakerPolicy());
+            .AddPolicyHandler(GetRetryPolicy());
+            //.AddPolicyHandler(GetCircuitBreakerPolicy())
             //.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
-            .AddPolicyHandler(GetFallbackPolicy());
-
+            //.AddPolicyHandler(GetFallbackPolicy());
         }
 
         private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         {
             Random jitterer = new Random();
+
             return HttpPolicyExtensions
-                 .HandleTransientHttpError() // TODO: Find out what this does...
-                 .OrResult(res => !res.IsSuccessStatusCode) // Retry if status code != 200
-                 .Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
+                 .HandleTransientHttpError() // Network failues
+                 .OrResult(res => !res.IsSuccessStatusCode) // Retry if status code != 2XX
+                 //.Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
                  .WaitAndRetryAsync(
                       4,
                      retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
@@ -82,7 +82,6 @@ namespace ProjectA
                          Console.WriteLine($"Span: {span}", span);
                          Console.WriteLine($"Context: {context}");
                      });
-
         }
 
         private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
@@ -99,7 +98,7 @@ namespace ProjectA
                 .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode).Or<HttpRequestException>()
                 .FallbackAsync(new HttpResponseMessage()
                 {
-                    Content = new StringContent("some value, some other value")
+                    Content = new StringContent("some fallback value")
                 });
         }
 

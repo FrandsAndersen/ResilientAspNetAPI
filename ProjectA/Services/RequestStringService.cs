@@ -20,7 +20,5 @@ namespace ProjectA.Services
             var response = await _httpClient.GetStringAsync("");
             return response;
         }
-
-
     }
 }

@@ -38,6 +38,7 @@ namespace ProjectA.Controllers
         [HttpGet("TypedClient")]
         public async Task<IActionResult> GetAsyncTypedClient()
         {
+            //var response = await _requestStringService.GetStringsFromProjectB();
             var response = await _requestStringService.GetStringsFromProjectB();
             return Ok(response);
         }
