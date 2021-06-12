@@ -56,7 +56,6 @@ namespace ConcurrencyProject.Controllers
             var returnMessage = "";
             try
             {
-                
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException e)

@@ -25,6 +25,8 @@ namespace ProjectA
 {
     public class Startup
     {
+        private const int WaitAndRetryCount = 4;
+        private const int ConsecutiveErrorsAllowedBeforeBreaking = 3;
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -56,10 +58,11 @@ namespace ProjectA
                 client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
-                .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1))
             .AddPolicyHandler(GetRetryPolicy());
+
             //.AddPolicyHandler(GetCircuitBreakerPolicy())
-            //.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));
             //.AddPolicyHandler(GetFallbackPolicy());
         }
 
@@ -70,9 +73,9 @@ namespace ProjectA
             return HttpPolicyExtensions
                  .HandleTransientHttpError() // Network failues
                  .OrResult(res => !res.IsSuccessStatusCode) // Retry if status code != 2XX
-                 //.Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
+                 .Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
                  .WaitAndRetryAsync(
-                      4,
+                     WaitAndRetryCount,
                      retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
                                                            + TimeSpan.FromMilliseconds(jitterer.Next(0, 1000)),
                      onRetry: (response, span, retryCount, context) =>
@@ -88,8 +91,13 @@ namespace ProjectA
         {
             return Policy
             .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .CircuitBreakerAsync(2, TimeSpan.FromSeconds(30)); // Hvis der sker to fejl i streg, open circuit i 30 sekunder
+            .CircuitBreakerAsync(ConsecutiveErrorsAllowedBeforeBreaking, TimeSpan.FromSeconds(30)); 
 
+            // open
+
+            // closed 
+
+            // half-open
         }
 
         private static IAsyncPolicy<HttpResponseMessage> GetFallbackPolicy()
@@ -98,7 +106,7 @@ namespace ProjectA
                 .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode).Or<HttpRequestException>()
                 .FallbackAsync(new HttpResponseMessage()
                 {
-                    Content = new StringContent("some fallback value")
+                    Content = new StringContent("The temperature was 21 degrees at 21:00 according to the cache")
                 });
         }
 
