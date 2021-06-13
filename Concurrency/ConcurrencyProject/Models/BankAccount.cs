@@ -14,10 +14,10 @@ namespace ConcurrencyProject.Models
         [ConcurrencyCheck]
         public int Balance { get; set; }
 
-        public void UpdateBalance(DbContext context, int newBalance, int oldBalance)
+        public void UpdateBalance(DbContext context, int newBalance, int expectedBalance)
         {
             Balance = newBalance;
-            context.Entry(this).Property(p => p.Balance).OriginalValue = oldBalance;
+            context.Entry(this).Property(p => p.Balance).OriginalValue = expectedBalance;
         }
     }
 }

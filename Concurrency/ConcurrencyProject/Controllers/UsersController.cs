@@ -24,27 +24,6 @@ namespace ConcurrencyProject.Controllers
             _context = context;
         }
 
-        // GET: api/Users
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-        {
-            return await _context.Users.ToListAsync();
-        }
-
-        // GET: api/Users/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return user;
-        }
-
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{triggerConcurrency}")]
@@ -114,27 +93,30 @@ namespace ConcurrencyProject.Controllers
 
                     foreach (var property in errorEntry.Metadata.GetProperties())
                     {
-                        var originalValue = errorEntry.Property(property.Name).OriginalValue;
-                        var currentValue = currentUserDataInDbAsEntry.Property(property.Name).CurrentValue;
+                        var expectedValue = errorEntry.Property(property.Name).OriginalValue;
+                        var actualValue = currentUserDataInDbAsEntry.Property(property.Name).CurrentValue;
                         var desiredValue = errorEntry.Property(property.Name).CurrentValue;
 
                         if (property.Name == nameof(Models.User.Name))
                         {
                             // Select the name different from original value
-                            if (originalValue == currentValue)
+                            if (expectedValue == actualValue
+)
                             {
                                 errorEntry.Property(property.Name).OriginalValue = desiredValue;
                             }
                             else
                             {
-                                errorEntry.Property(property.Name).OriginalValue = currentValue;
+                                errorEntry.Property(property.Name).OriginalValue = actualValue
+;
                             }
                         } 
                         else if (property.Name == nameof(Models.User.Age))
                         {
                             // Select highest number (You only get older)
                             // DEMO ONLY
-                            errorEntry.Property(property.Name).OriginalValue = currentValue;
+                            errorEntry.Property(property.Name).OriginalValue = actualValue
+;
 
                         }
                         else if (property.Name == nameof(Models.User.Height))
@@ -145,7 +127,8 @@ namespace ConcurrencyProject.Controllers
                         }
                         else if (property.Name == nameof(Models.User.ChangeCheck))
                         {
-                            errorEntry.Property(property.Name).OriginalValue = currentValue;
+                            errorEntry.Property(property.Name).OriginalValue = actualValue
+;
                         }
                     }
 
@@ -160,38 +143,6 @@ namespace ConcurrencyProject.Controllers
                 }
             }
             return exceptions;
-        }
-
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
-        {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.UserId }, user);
-        }
-
-        // DELETE: api/Users/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool UserExists(int id)
-        {
-            return _context.Users.Any(e => e.UserId == id);
         }
     }
 }

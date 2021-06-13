@@ -43,7 +43,7 @@ namespace ProjectA
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ProjectA", Version = "v1" });
             });
-            services.AddHttpClient("MyNamedClient", client => // Named Client : DELETE THIS COMMENT
+            services.AddHttpClient("MyNamedClient", client =>
             {
                 client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -53,12 +53,12 @@ namespace ProjectA
                 TimeSpan.FromSeconds(3),
             }));
 
-            services.AddHttpClient<IRequestStringService, RequestStringService>(client => // Typed Client : DELETE THIS COMMENT
+            services.AddHttpClient<IRequestStringService, RequestStringService>(client =>
             {
                 client.BaseAddress = new Uri("https://localhost:44383/api/ProjectB");
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // Set life time to five minutes,
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
             .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1))
             .AddPolicyHandler(GetRetryPolicy());
 
@@ -71,9 +71,9 @@ namespace ProjectA
             Random jitterer = new Random();
 
             return HttpPolicyExtensions
-                 .HandleTransientHttpError() // Network failues
-                 .OrResult(res => !res.IsSuccessStatusCode) // Retry if status code != 2XX
-                 .Or<TimeoutRejectedException>() // Retry when TimeoutRejectedException are thrown
+                 .HandleTransientHttpError()
+                 .OrResult(res => !res.IsSuccessStatusCode) 
+                 .Or<TimeoutRejectedException>() 
                  .WaitAndRetryAsync(
                      WaitAndRetryCount,
                      retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
